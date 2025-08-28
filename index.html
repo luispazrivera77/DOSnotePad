@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Editor DOS Pantalla Completa</title>
+  <meta name="theme-color" content="#000000">
+  <style>
+    :root{
+      --bg:#000000;
+      --fg:#00ff66;
+      --fg-dim:#00cc52;
+      --tap:44px;
+      --font: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+    }
+    body.light {
+      --bg: #ffffff;
+      --fg: #222222;
+      --fg-dim: #888888;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html {
+      height: 100%;
+    }
+    
+    body {
+      height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+    }
+    
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      background: var(--bg);
+    }
+    
+    header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--fg-dim);
+      text-align: center;
+      color: var(--fg);
+      font-weight: 600;
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    
+    .menu-bar {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border-bottom: 1px solid var(--fg-dim);
+      padding: 0 16px;
+      position: relative;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    
+    .menu-btn {
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--fg-dim);
+      font: 600 16px var(--font);
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+    
+    .menu-dropdown {
+      display: none;
+      position: absolute;
+      top: 44px;
+      left: 0;
+      background: var(--bg);
+      border: 1px solid var(--fg-dim);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      z-index: 1000;
+      width: 300px;
+      padding: 12px;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    
+    .menu-bar.open .menu-dropdown {
+      display: flex;
+    }
+    
+    .menu-dropdown label, 
+    .menu-dropdown input, 
+    .menu-dropdown select, 
+    .menu-dropdown button {
+      font-size: 14px;
+      color: var(--fg);
+      background: var(--bg);
+      border: 1px solid var(--fg-dim);
+      padding: 8px;
+      border-radius: 4px;
+      font-family: var(--font);
+    }
+    
+    .menu-dropdown input[type="number"] {
+      width: 80px;
+    }
+    
+    .menu-dropdown button {
+      cursor: pointer;
+    }
+    
+    .menu-dropdown button:active {
+      opacity: 0.7;
+    }
+    
+    textarea {
+      flex: 1;
+      width: 100%;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 18px;
+      line-height: 1.6;
+      border: 0;
+      outline: 0;
+      resize: none;
+      caret-color: var(--fg);
+      font-family: var(--font);
+      overflow-y: auto;
+    }
+    
+    textarea::placeholder {
+      color: rgba(0,255,102,.6);
+    }
+    
+    footer {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      border-top: 1px solid var(--fg-dim);
+      background: var(--bg);
+      padding: 8px 12px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    
+    button {
+      min-height: var(--tap);
+      padding: 8px 14px;
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--fg-dim);
+      font: 600 14px var(--font);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    
+    button.primary {
+      background: var(--fg);
+      color: var(--bg);
+      border: none;
+    }
+    
+    button:active {
+      opacity: .7;
+    }
+    
+    .muted {
+      color: var(--fg-dim);
+      font-size: 12px;
+    }
+    
+    /* Pantalla completa */
+    :fullscreen .app,
+    :-webkit-full-screen .app {
+      height: 100vh;
+      width: 100vw;
+    }
+
+    :fullscreen,
+    :-webkit-full-screen {
+      background: var(--bg);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .menu-dropdown {
+        width: 280px;
+        max-width: 90vw;
+      }
+      
+      textarea {
+        font-size: 16px;
+        padding: 12px;
+      }
+    }
+    
+    @media (orientation: landscape) and (max-height: 500px) {
+      header {
+        padding: 6px 16px;
+        font-size: 14px;
+      }
+      
+      .menu-bar {
+        height: 38px;
+      }
+      
+      footer {
+        padding: 6px 8px;
+      }
+      
+      button {
+        min-height: 36px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>Editor de Luis Paz</header>
+    <nav class="menu-bar" id="menuBar">
+      <button class="menu-btn" id="menuBtn">☰ Menú</button>
+      <div class="menu-dropdown">
+        <button id="pantallaCompleta">📱 Pantalla Completa</button>
+        <button id="tema">🌓 Cambiar Tema</button>
+        
+        <label>Fuente:
+          <select id="fuente">
+            <option value="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace">Monoespaciada</option>
+            <option value="Arial, Helvetica, sans-serif">Arial</option>
+            <option value="Times New Roman, Times, serif">Times</option>
+          </select>
+        </label>
+        
+        <label>Tamaño:
+          <input type="number" id="tamano" min="12" max="32" value="18">
+        </label>
+        
+        <label>Color de fondo:
+          <select id="colorFondo">
+            <option value="#000000">Negro</option>
+            <option value="#1a1a1a">Gris Oscuro</option>
+            <option value="#0d1117">GitHub Dark</option>
+            <option value="#2d3748">Azul Oscuro</option>
+            <option value="#ffffff">Blanco</option>
+            <option value="#f7fafc">Gris Claro</option>
+          </select>
+        </label>
+        
+        <label>Color de texto:
+          <select id="colorTexto">
+            <option value="#00ff66">Verde Terminal</option>
+            <option value="#00ffff">Cyan</option>
+            <option value="#ffff00">Amarillo</option>
+            <option value="#ff6b6b">Rojo Suave</option>
+            <option value="#ffffff">Blanco</option>
+            <option value="#222222">Negro</option>
+          </select>
+        </label>
+        
+        <input type="text" id="buscar" placeholder="Buscar texto..." />
+        <button id="btnBuscar">🔍 Buscar</button>
+        
+        <input type="text" id="reemplazar" placeholder="Reemplazar con..." />
+        <button id="btnReemplazar">🔄 Reemplazar Todo</button>
+      </div>
+    </nav>
+    
+    <textarea id="editor" placeholder="Escribe tu texto aquí..."></textarea>
+    
+    <footer>
+      <button id="limpiar">🗑️ Limpiar</button>
+      <button id="exportar" class="primary">💾 Descargar</button>
+      <button id="copiar">📋 Copiar</button>
+      <span class="muted" id="estado"></span>
+      <span class="muted" id="contador">Palabras: 0</span>
+      <span class="muted" id="caracteres">Caracteres: 0</span>
+    </footer>
+  </div>
+
+  <script>
+    // Variables
+    const menuBar = document.getElementById('menuBar');
+    const menuBtn = document.getElementById('menuBtn');
+    const editor = document.getElementById('editor');
+    const exportBtn = document.getElementById('exportar');
+    const clearBtn = document.getElementById('limpiar');
+    const copiarBtn = document.getElementById('copiar');
+    const estado = document.getElementById('estado');
+    const contador = document.getElementById('contador');
+    const caracteres = document.getElementById('caracteres');
+    const temaBtn = document.getElementById('tema');
+    const fuenteSel = document.getElementById('fuente');
+    const tamanoInp = document.getElementById('tamano');
+    const buscarInp = document.getElementById('buscar');
+    const reemplazarInp = document.getElementById('reemplazar');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const btnReemplazar = document.getElementById('btnReemplazar');
+    const pantallaCompletaBtn = document.getElementById('pantallaCompleta');
+    const colorFondoSel = document.getElementById('colorFondo');
+    const colorTextoSel = document.getElementById('colorTexto');
+    
+    const KEY = 'editor_dos_content';
+
+    // Cargar contenido guardado
+    if (localStorage.getItem(KEY)) {
+      editor.value = localStorage.getItem(KEY);
+    }
+
+    // Función para mostrar estado
+    let estadoTimeout;
+    function mostrarEstado(mensaje) {
+      estado.textContent = mensaje;
+      clearTimeout(estadoTimeout);
+      estadoTimeout = setTimeout(function() {
+        estado.textContent = '';
+      }, 2000);
+    }
+
+    // Contador de palabras y caracteres
+    function actualizarContadores() {
+      const texto = editor.value;
+      const palabras = texto.trim() ? texto.trim().split(/\s+/).length : 0;
+      const chars = texto.length;
+      contador.textContent = 'Palabras: ' + palabras;
+      caracteres.textContent = 'Caracteres: ' + chars;
+    }
+
+    // Eventos del editor
+    editor.addEventListener('input', function() {
+      localStorage.setItem(KEY, editor.value);
+      actualizarContadores();
+      mostrarEstado('Guardado automáticamente');
+    });
+
+    // Menú
+    menuBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      menuBar.classList.toggle('open');
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!menuBar.contains(e.target)) {
+        menuBar.classList.remove('open');
+      }
+    });
+
+    // Pantalla completa
+    pantallaCompletaBtn.addEventListener('click', function() {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+          pantallaCompletaBtn.textContent = '🔙 Salir Pantalla Completa';
+          mostrarEstado('Pantalla completa activada');
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+          pantallaCompletaBtn.textContent = '🔙 Salir Pantalla Completa';
+          mostrarEstado('Pantalla completa activada');
+        } else {
+          mostrarEstado('Pantalla completa no disponible');
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+        pantallaCompletaBtn.textContent = '📱 Pantalla Completa';
+        mostrarEstado('Salió de pantalla completa');
+      }
+    });
+
+    // Detectar cambios de pantalla completa
+    document.addEventListener('fullscreenchange', function() {
+      if (document.fullscreenElement) {
+        pantallaCompletaBtn.textContent = '🔙 Salir Pantalla Completa';
+      } else {
+        pantallaCompletaBtn.textContent = '📱 Pantalla Completa';
+      }
+    });
+
+    // Cambiar tema
+    temaBtn.addEventListener('click', function() {
+      document.body.classList.toggle('light');
+      const esClaro = document.body.classList.contains('light');
+      mostrarEstado(esClaro ? 'Tema claro activado' : 'Tema oscuro activado');
+      localStorage.setItem('tema', esClaro ? 'light' : 'dark');
+    });
+
+    // Cambiar colores
+    colorFondoSel.addEventListener('change', function() {
+      const color = colorFondoSel.value;
+      document.documentElement.style.setProperty('--bg', color);
+      localStorage.setItem('colorFondo', color);
+      mostrarEstado('Color de fondo cambiado');
+    });
+
+    colorTextoSel.addEventListener('change', function() {
+      const color = colorTextoSel.value;
+      document.documentElement.style.setProperty('--fg', color);
+      // Color dim más simple
+      const r = parseInt(color.slice(1,3), 16);
+      const g = parseInt(color.slice(3,5), 16);
+      const b = parseInt(color.slice(5,7), 16);
+      const dimColor = '#' + 
+        Math.floor(r * 0.7).toString(16).padStart(2, '0') +
+        Math.floor(g * 0.7).toString(16).padStart(2, '0') +
+        Math.floor(b * 0.7).toString(16).padStart(2, '0');
+      document.documentElement.style.setProperty('--fg-dim', dimColor);
+      localStorage.setItem('colorTexto', color);
+      mostrarEstado('Color de texto cambiado');
+    });
+
+    // Fuente y tamaño
+    fuenteSel.addEventListener('change', function() {
+      editor.style.fontFamily = fuenteSel.value;
+      localStorage.setItem('fuente', fuenteSel.value);
+      mostrarEstado('Fuente cambiada');
+    });
+
+    tamanoInp.addEventListener('input', function() {
+      editor.style.fontSize = tamanoInp.value + 'px';
+      localStorage.setItem('tamano', tamanoInp.value);
+      mostrarEstado('Tamaño cambiado');
+    });
+
+    // Buscar
+    btnBuscar.addEventListener('click', function() {
+      const texto = editor.value;
+      const buscar = buscarInp.value;
+      if (!buscar) {
+        mostrarEstado('Escribe algo para buscar');
+        return;
+      }
+      const pos = texto.indexOf(buscar);
+      if (pos >= 0) {
+        editor.focus();
+        editor.setSelectionRange(pos, pos + buscar.length);
+        mostrarEstado('Texto encontrado');
+      } else {
+        mostrarEstado('Texto no encontrado');
+      }
+    });
+
+    // Reemplazar
+    btnReemplazar.addEventListener('click', function() {
+      const buscar = buscarInp.value;
+      const reemplazar = reemplazarInp.value;
+      if (!buscar) {
+        mostrarEstado('Escribe algo para buscar');
+        return;
+      }
+      const textoOriginal = editor.value;
+      editor.value = textoOriginal.split(buscar).join(reemplazar);
+      if (editor.value !== textoOriginal) {
+        localStorage.setItem(KEY, editor.value);
+        actualizarContadores();
+        mostrarEstado('Texto reemplazado');
+      } else {
+        mostrarEstado('Nada para reemplazar');
+      }
+    });
+
+    // Limpiar
+    clearBtn.addEventListener('click', function() {
+      if (editor.value && confirm('¿Borrar todo el contenido?')) {
+        editor.value = '';
+        localStorage.removeItem(KEY);
+        actualizarContadores();
+        mostrarEstado('Contenido borrado');
+      }
+    });
+
+    // Exportar
+    exportBtn.addEventListener('click', function() {
+      if (!editor.value.trim()) {
+        mostrarEstado('No hay contenido para descargar');
+        return;
+      }
+      const blob = new Blob([editor.value], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mi_texto.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      mostrarEstado('Archivo descargado');
+    });
+
+    // Copiar
+    copiarBtn.addEventListener('click', function() {
+      if (!editor.value.trim()) {
+        mostrarEstado('No hay contenido para copiar');
+        return;
+      }
+      editor.select();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(editor.value).then(function() {
+          mostrarEstado('Texto copiado al portapapeles');
+        });
+      } else {
+        document.execCommand('copy');
+        mostrarEstado('Texto copiado');
+      }
+    });
+
+    // Cargar configuración guardada
+    const temaGuardado = localStorage.getItem('tema');
+    const fuenteGuardada = localStorage.getItem('fuente');
+    const tamanoGuardado = localStorage.getItem('tamano');
+    const colorFondoGuardado = localStorage.getItem('colorFondo');
+    const colorTextoGuardado = localStorage.getItem('colorTexto');
+
+    if (temaGuardado === 'light') {
+      document.body.classList.add('light');
+    }
+
+    if (fuenteGuardada) {
+      fuenteSel.value = fuenteGuardada;
+      editor.style.fontFamily = fuenteGuardada;
+    }
+
+    if (tamanoGuardado) {
+      tamanoInp.value = tamanoGuardado;
+      editor.style.fontSize = tamanoGuardado + 'px';
+    }
+
+    if (colorFondoGuardado) {
+      colorFondoSel.value = colorFondoGuardado;
+      document.documentElement.style.setProperty('--bg', colorFondoGuardado);
+    }
+
+    if (colorTextoGuardado) {
+      colorTextoSel.value = colorTextoGuardado;
+      document.documentElement.style.setProperty('--fg', colorTextoGuardado);
+    }
+
+    // Inicializar contadores
+    actualizarContadores();
+
+    // Eventos táctiles básicos
+    document.addEventListener('touchstart', function(e) {
+      if (!menuBar.contains(e.target)) {
+        menuBar.classList.remove('open');
+      }
+    });
+
+  </script>
+</body>
+</html>
